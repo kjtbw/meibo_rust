@@ -1,0 +1,8 @@
+[package]
+name = "meibo_test"
+version = "0.1.0"
+authors = ["Eiji Yamamoto <yamamoto-e@swlab.cs.okayama-u.ac.jp>"]
+edition = "2018"
+
+[dependencies]
+chrono = "0.4"
