@@ -2,28 +2,43 @@ use std::io;
 use std::process;
 use chrono::{Utc, Local, DateTime, Date};
 
-#[derive(Debug)]
-struct ProfileCollection {
-    v: Vec<Profile>,
-}
-
-impl ProfileCollection{
-    fn push(&mut self, p: Profile){
-        self.v.push(p);
-    }
-}
-
+///////////////////////////////////////////////
+// define Profile
+///////////////////////////////////////////////
 #[derive(Debug)]
 struct Profile {
     id: i32,
     name: String,
-    year: Date<Utc>,
+    year: String,
     place: String,
     note: String,
 }
 
+impl Profile {
+    fn print_self(&self){
+        println!("Id:{}\nName:{}\nYear:{}\nPlace:{}\nNote:{}\n", self.id, self.name, self.year, self.place, self.note);
+    }
+}
 
+///////////////////////////////////////////////
+// define ProfileCollection
+///////////////////////////////////////////////
+pub trait ProfileCollection {
+    fn print_list(&self, n:u32);
+}
 
+impl ProfileCollection for Vec<Profile> {
+    fn print_list(&self, n:u32){
+        for i in 0..n {
+            let i = i as usize;
+            self[i].print_self();
+        }
+    }
+}
+
+///////////////////////////////////////////////
+// define Message
+///////////////////////////////////////////////
 #[derive(Debug)]
 enum Message {
     Quit,
@@ -37,72 +52,83 @@ enum Message {
 }
 
 impl Message {
-    fn call(&self, pc:ProfileCollection) -> i32 {
-        match self{
+    fn call(&self, v:&mut Vec<Profile>){
+        match &self{
             Message::Quit => self.quit(),
-            Message::Column => self.column(pc),
-            Message::Print(n) => self.print(pc),
-            Message::Read(s) => self.read(pc),
-            Message::Write(s) => self.write(pc),
-            Message::Find(s) => self.find(pc),
-            Message::Sort(n) => self.sort(pc),
+            Message::Column => self.column(v),
+            Message::Print(n) => self.print(*n, v),
+            Message::Read(s) => self.read(s, v),
+            Message::Write(s) => self.write(&s, v),
+            Message::Find(s) => self.find(&s, v),
+            Message::Sort(n) => self.sort(*n, v),
             Message::NotFound => self.quit(),
         }
     }//end method call
 
-    fn quit(&self) -> i32{
+    fn quit(&self){
         println!("Your Command is {:?}", self);
-        process::exit(1)
+        process::exit(1);
     }//end method quit
 
-    fn column(&self, pc:ProfileCollection) -> i32{
+    fn column(&self, v:&mut Vec<Profile>){
         println!("Your Command is {:?}", self);
-        1
+        println!("{} Profile(s)", v.len());
     }//end method column
 
-    fn print(&self, pc:ProfileCollection) -> i32{
+    fn print(&self, n:i32, v:&mut Vec<Profile>){
         println!("Your Command is {:?}", self);
-        2
+        if n > 0 {
+            let n = n as u32;
+            v.print_list(n);
+        }
+        if n == 0 {
+            let n = v.len() as u32;
+            v.print_list(n);
+        }
+        if n < 0 {
+            v.reverse();
+            let n = n.abs() as u32;
+            v.print_list(n);
+            v.reverse();
+        }
     }//end method print
 
-    fn read(&self, pc:ProfileCollection) -> i32{
+    fn read(&self, s:&String, v:&mut Vec<Profile>){
         println!("Your Command is {:?}", self);
-        3
     }//end method read
 
-    fn write(&self, pc:ProfileCollection) -> i32{
+    fn write(&self, s:&String, v:&mut Vec<Profile>){
         println!("Your Command is {:?}", self);
-        4
     }//end method write
 
-    fn find(&self, pc:ProfileCollection) -> i32{
+    fn find(&self, s:&String, v:&mut Vec<Profile>){
         println!("Your Command is {:?}", self);
-        5
     }//end method find
 
-    fn sort(&self, pc:ProfileCollection) -> i32{
+    fn sort(&self, n:i32, v:&mut Vec<Profile>){
         println!("Your Command is {:?}", self);
-        6
     }//end method sort
-
 }//end impl Message
 
-fn evaluate_input(s: &String, mut pc: ProfileCollection) {
+///////////////////////////////////////////////
+// some functions for parse input
+///////////////////////////////////////////////
+fn evaluate_input(s: &String, v: &mut Vec<Profile>) {
     if s.starts_with("%") {
         let m = gen_message(s);
-        m.call(pc);
+        m.call(v);
     } else {
         // csv形式の保存と，エラー処理
         let data: Vec<&str> = s.split(",").collect();
         let p = Profile {
             id: data.get(0).unwrap().parse().expect("Failed to convert &str into i32"),
             name: data.get(1).unwrap().to_string(),
-            year: Utc::today(),
+            year: data.get(2).unwrap().to_string(),
             place: data.get(3).unwrap().to_string(),
             note: data.get(4).unwrap().to_string(),
         };
-        pc.push(p);
-        println!("Your input: {:?} ", pc);
+        v.push(p);
+        println!("Your input: {:?} ", v);
     }
 }
 
@@ -122,22 +148,17 @@ fn gen_message(s: &String) -> Message {
     }
 }
 
+///////////////////////////////////////////////
+// main
+///////////////////////////////////////////////
 fn main() {
-    // ほんとはライフタイム渡したい
-    // let mut pc = ProfileCollection {
-    //     v: Vec::new(),
-    // };
-
+    let mut v: Vec<Profile> = Vec::new();
     loop{
-        let mut pc = ProfileCollection {
-            v: Vec::new(),
-        };
-
         let mut guess = String::new();
         println!("Please input some message!");
         io::stdin().read_line(&mut guess).expect("Failed to read line");
         println!("Your input: {} ", guess);
         guess.pop();// 末尾の改行削除
-        evaluate_input(&guess, pc);
+        evaluate_input(&guess, &mut v);
     }
 }//end main
