@@ -1,9 +1,9 @@
 use std::io;
 use std::process;
-use chrono::{Utc, Local, DateTime, Date};
+//use chrono::{Utc, Local, DateTime, Date};
 use std::fs::File;
 use std::io::prelude::*;
-
+use std::cmp::Ordering;
 
 ///////////////////////////////////////////////
 // define Profile
@@ -34,8 +34,7 @@ impl Profile {
     }
 
     fn to_csv(&self) -> String{
-        let mut csv = String::new();
-        csv = format!("{},{},{},{},{}\n", self.id, self.name, self.year, self.place, self.note);
+        let csv = format!("{},{},{},{},{}\n", self.id, self.name, self.year, self.place, self.note);
         csv
     }
 
@@ -43,7 +42,7 @@ impl Profile {
         self.id.to_string().contains(w) || self.name.contains(w) || self.year.contains(w) || self.place.contains(w) || self.note.contains(w)
     }
 
-}
+}//end impl Profile
 
 ///////////////////////////////////////////////
 // define ProfileCollection
@@ -91,35 +90,33 @@ impl Message {
     }//end method call
 
     fn quit(&self){
-        println!("Your Command is {:?}", self);
         process::exit(1);
     }//end method quit
 
     fn column(&self, v:&mut Vec<Profile>){
-        println!("Your Command is {:?}", self);
         println!("{} Profile(s)", v.len());
     }//end method column
 
     fn print(&self, n:i32, v:&mut Vec<Profile>){
-        println!("Your Command is {:?}", self);
-        if n > 0 {
-            let n = n as u32;
-            v.print_list(n);
-        }
-        if n == 0 {
-            let n = v.len() as u32;
-            v.print_list(n);
-        }
-        if n < 0 {
-            v.reverse();
-            let n = n.abs() as u32;
-            v.print_list(n);
-            v.reverse();
+        match n.cmp(&0) {
+            Ordering::Greater => {
+                let n = n as u32;
+                v.print_list(n);
+            },
+            Ordering::Equal => {
+                let n = v.len() as u32;
+                v.print_list(n);
+            },
+            Ordering::Less => {
+                v.reverse();
+                let n = n.abs() as u32;
+                v.print_list(n);
+                v.reverse();
+            }
         }
     }//end method print
 
     fn read(&self, s:&String, v:&mut Vec<Profile>){
-        println!("Your Command is {:?}", self);
         let mut file = File::open(s).unwrap();
         let mut contents = String::new();
         file.read_to_string(&mut contents);
@@ -135,7 +132,6 @@ impl Message {
     }//end method read
 
     fn write(&self, s:&String, v:&mut Vec<Profile>){
-        println!("Your Command is {:?}", self);
         let mut buffer = File::create(s).unwrap();
         let mut s = String::new();
         for p in v{
@@ -147,16 +143,15 @@ impl Message {
     }//end method write
 
     fn find(&self, s:&String, v:&mut Vec<Profile>){
-        println!("Your Command is {:?}", self);
         for p in v{
             if p.contains(s) {
                 p.print_self();
             }
         }
+        println!("Command F is finished");
     }//end method find
 
     fn sort(&self, n:i32, v:&mut Vec<Profile>){
-        println!("Your Command is {:?}", self);
         match n {
             1 => v.sort_by(|a,b| a.id.cmp(&b.id)),
             2 => v.sort_by(|a,b| a.name.cmp(&b.name)),
@@ -165,6 +160,7 @@ impl Message {
             5 => v.sort_by(|a,b| a.note.cmp(&b.note)),
             _ => println!("ERROR:Invarid Format")
         }
+        println!("Command S is finished");
     }//end method sort
 }//end impl Message
 
@@ -176,15 +172,15 @@ fn evaluate_input(s: &String, v: &mut Vec<Profile>) {
         let m = gen_message(s);
         m.call(v);
     } else {
+        // csv形式の保存と，エラー処理
         if !s.contains(",") {
             println!("ERROR:Invarid Format");
             return;
         }
-        // csv形式の保存と，エラー処理
         let data: Vec<&str> = s.split(",").collect();
         let p = Profile::new(data);
         v.push(p);
-        println!("Your input: {:?} ", v);
+        println!("Added Profile");
     }
 }
 
@@ -213,7 +209,6 @@ fn main() {
         let mut guess = String::new();
         println!("Please input some message!");
         io::stdin().read_line(&mut guess).expect("Failed to read line");
-        println!("Your input: {} ", guess);
         guess.pop();// 末尾の改行削除
         evaluate_input(&guess, &mut v);
     }
