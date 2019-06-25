@@ -38,6 +38,11 @@ impl Profile {
         csv = format!("{},{},{},{},{}\n", self.id, self.name, self.year, self.place, self.note);
         csv
     }
+
+    fn contains(&self, w:&str) -> bool{
+        self.id.to_string().contains(w) || self.name.contains(w) || self.year.contains(w) || self.place.contains(w) || self.note.contains(w)
+    }
+
 }
 
 ///////////////////////////////////////////////
@@ -119,9 +124,9 @@ impl Message {
         let mut contents = String::new();
         file.read_to_string(&mut contents);
         let list = contents.split("\n");
-        for i in list {
-            if i.contains(",") {
-                let data: Vec<&str> = i.split(",").collect();
+        for p in list {
+            if p.contains(",") {
+                let data: Vec<&str> = p.split(",").collect();
                 let p = Profile::new(data);
                 v.push(p);
             }
@@ -133,8 +138,8 @@ impl Message {
         println!("Your Command is {:?}", self);
         let mut buffer = File::create(s).unwrap();
         let mut s = String::new();
-        for i in v{
-            let csv = i.to_csv();
+        for p in v{
+            let csv = p.to_csv();
             s.push_str(&csv);
         }
         write!(buffer, "{}", s);
@@ -143,10 +148,23 @@ impl Message {
 
     fn find(&self, s:&String, v:&mut Vec<Profile>){
         println!("Your Command is {:?}", self);
+        for p in v{
+            if p.contains(s) {
+                p.print_self();
+            }
+        }
     }//end method find
 
     fn sort(&self, n:i32, v:&mut Vec<Profile>){
         println!("Your Command is {:?}", self);
+        match n {
+            1 => v.sort_by(|a,b| a.id.cmp(&b.id)),
+            2 => v.sort_by(|a,b| a.name.cmp(&b.name)),
+            3 => v.sort_by(|a,b| a.year.cmp(&b.year)),
+            4 => v.sort_by(|a,b| a.place.cmp(&b.place)),
+            5 => v.sort_by(|a,b| a.note.cmp(&b.note)),
+            _ => println!("ERROR:Invarid Format")
+        }
     }//end method sort
 }//end impl Message
 
