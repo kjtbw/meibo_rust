@@ -1,6 +1,9 @@
 use std::io;
 use std::process;
 use chrono::{Utc, Local, DateTime, Date};
+use std::fs::File;
+use std::io::prelude::*;
+
 
 ///////////////////////////////////////////////
 // define Profile
@@ -17,6 +20,23 @@ struct Profile {
 impl Profile {
     fn print_self(&self){
         println!("Id:{}\nName:{}\nYear:{}\nPlace:{}\nNote:{}\n", self.id, self.name, self.year, self.place, self.note);
+    }
+
+    fn new(data:Vec<&str>) -> Profile{
+        let p = Profile {
+            id: data.get(0).unwrap().parse().expect("Failed to convert &str into i32"),
+            name: data.get(1).unwrap().to_string(),
+            year: data.get(2).unwrap().to_string(),
+            place: data.get(3).unwrap().to_string(),
+            note: data.get(4).unwrap().to_string(),
+        };
+        p
+    }
+
+    fn to_csv(&self) -> String{
+        let mut csv = String::new();
+        csv = format!("{},{},{},{},{}\n", self.id, self.name, self.year, self.place, self.note);
+        csv
     }
 }
 
@@ -95,10 +115,30 @@ impl Message {
 
     fn read(&self, s:&String, v:&mut Vec<Profile>){
         println!("Your Command is {:?}", self);
+        let mut file = File::open(s).unwrap();
+        let mut contents = String::new();
+        file.read_to_string(&mut contents);
+        let list = contents.split("\n");
+        for i in list {
+            if i.contains(",") {
+                let data: Vec<&str> = i.split(",").collect();
+                let p = Profile::new(data);
+                v.push(p);
+            }
+        }
+        println!("Command R is finished");
     }//end method read
 
     fn write(&self, s:&String, v:&mut Vec<Profile>){
         println!("Your Command is {:?}", self);
+        let mut buffer = File::create(s).unwrap();
+        let mut s = String::new();
+        for i in v{
+            let csv = i.to_csv();
+            s.push_str(&csv);
+        }
+        write!(buffer, "{}", s);
+        println!("Command W is finished");
     }//end method write
 
     fn find(&self, s:&String, v:&mut Vec<Profile>){
@@ -118,15 +158,13 @@ fn evaluate_input(s: &String, v: &mut Vec<Profile>) {
         let m = gen_message(s);
         m.call(v);
     } else {
+        if !s.contains(",") {
+            println!("ERROR:Invarid Format");
+            return;
+        }
         // csv形式の保存と，エラー処理
         let data: Vec<&str> = s.split(",").collect();
-        let p = Profile {
-            id: data.get(0).unwrap().parse().expect("Failed to convert &str into i32"),
-            name: data.get(1).unwrap().to_string(),
-            year: data.get(2).unwrap().to_string(),
-            place: data.get(3).unwrap().to_string(),
-            note: data.get(4).unwrap().to_string(),
-        };
+        let p = Profile::new(data);
         v.push(p);
         println!("Your input: {:?} ", v);
     }
